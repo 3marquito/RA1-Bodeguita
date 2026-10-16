@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tienda Bodeguita - Pimentel</title>
+<style>
+  body { font-family: sans-serif; margin: 0; padding: 15px; background: #f4f4f4; color: #333; line-height: 1.4; }
+  header { background: #222; color: #fff; padding: 15px; border-radius: 6px; margin-bottom: 10px; }
+  header h1 { margin: 0; font-size: 1.4rem; }
+  header p { margin: 5px 0 0; color: #ccc; font-size: 0.85rem; }
+  nav { display: flex; gap: 5px; flex-wrap: wrap; margin-bottom: 15px; }
+  nav button { padding: 8px 12px; cursor: pointer; border: 1px solid #ccc; background: #fff; border-radius: 4px; font-size: 0.9rem; }
+  nav button.on { background: #007bff; color: #fff; border-color: #007bff; }
+  section { display: none; background: #fff; border: 1px solid #ccc; border-radius: 6px; padding: 20px; }
+  section.on { display: block; }
+  h2 { margin-top: 0; font-size: 1.2rem; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; margin-bottom: 10px; }
+  label { display: block; font-size: 0.85rem; color: #555; margin-bottom: 3px; }
+  input, select { width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+  .btn { background: #007bff; color: #fff; border: none; padding: 8px 14px; border-radius: 4px; cursor: pointer; margin-top: 10px; }
+  .btn:hover { background: #0056b3; }
+  .btn.sec { background: #6c757d; margin: 0; padding: 5px 8px; font-size: 0.8rem; }
+  .btn.ok { background: #28a745; margin: 0; }
+  .btn.no { background: #dc3545; margin: 0; }
+  .msg { margin-top: 10px; padding: 8px; border-radius: 4px; font-size: 0.9rem; display: none; }
+  .msg.ok { display: block; background: #d4edda; color: #155724; }
+  .msg.err { display: block; background: #f8d7da; color: #721c24; }
+  table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.9rem; }
+  th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+  th { background: #f8f9fa; color: #333; }
+  td input { padding: 4px; width: 90px; }
+  .card { border: 1px solid #ccc; border-radius: 4px; padding: 10px; margin-top: 10px; background: #fdfdfd; }
+  .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .tag { padding: 2px 6px; border-radius: 3px; font-size: 0.75rem; }
+  .tag.ok { background: #d4edda; color: #155724; }
+  .tag.no { background: #f8d7da; color: #721c24; }
+  .vacio { color: #777; font-style: italic; }
+  .total { font-weight: bold; margin-top: 10px; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Tienda Bodeguita - Pimentel</h1>
+  <p>Clientes, productos, ventas y caja</p>
+</header>
+
+<nav id="nav"></nav>
+
+<main>
+  <section id="s-cliente">
+    <h2>Registrar cliente</h2>
+    <div class="grid">
+      <div><label for="c-nom">Nombre</label><input id="c-nom"></div>
+      <div><label for="c-ape">Apellido</label><input id="c-ape"></div>
+      <div><label for="c-dni">DNI (8 dígitos)</label><input id="c-dni" inputmode="numeric" maxlength="8"></div>
+      <div><label for="c-tel">Teléfono (9 dígitos)</label><input id="c-tel" inputmode="numeric" maxlength="9"></div>
+    </div>
+    <button class="btn" onclick="registrarCliente()">Registrar cliente</button>
+    <div id="m-cliente" class="msg"></div>
+
+    <h2 style="margin-top:25px">Buscar cliente por DNI</h2>
+    <div class="row">
+      <input id="b-dni" placeholder="Ingresa el DNI" inputmode="numeric" maxlength="8" style="max-width:200px">
+      <button class="btn" style="margin:0" onclick="buscarCliente()">Buscar</button>
+    </div>
+    <div id="r-busqueda"></div>
+  </section>
+
+  <section id="s-producto">
+    <h2>Registrar producto</h2>
+    <div class="grid">
+      <div><label for="p-nom">Nombre</label><input id="p-nom"></div>
+      <div><label for="p-pre">Precio (S/)</label><input id="p-pre" type="number" step="0.01" min="0"></div>
+      <div><label for="p-stk">Stock</label><input id="p-stk" type="number" step="1" min="0"></div>
+    </div>
+    <button class="btn" onclick="registrarProducto()">Registrar producto</button>
+    <div id="m-producto" class="msg"></div>
+  </section>
+
+  <section id="s-stock">
+    <h2>Productos en stock</h2>
+    <div id="m-stock" class="msg"></div>
+    <div id="tabla-stock"></div>
+  </section>
+
+  <section id="s-venta">
+    <h2>Registrar venta</h2>
+    <div class="grid">
+      <div><label for="v-cli">Cliente</label><select id="v-cli" onchange="calcTotal()"></select></div>
+      <div><label for="v-pro">Producto</label><select id="v-pro" onchange="calcTotal()"></select></div>
+      <div><label for="v-can">Cantidad</label><input id="v-can" type="number" min="1" step="1" value="1" oninput="calcTotal()"></div>
+    </div>
+    <div class="total">Precio a pagar: <span id="v-total">S/ 0.00</span></div>
+    <button class="btn" onclick="registrarVenta()">Enviar a cola de atención</button>
+    <div id="m-venta" class="msg"></div>
+  </section>
+
+  <section id="s-cola">
+    <h2>Cola de atención</h2>
+    <p style="color:#666;font-size:0.9rem">Las ventas quedan pendientes aquí. El stock se descuenta al confirmar.</p>
+    <div id="cola-info"></div>
+    <div id="m-cola" class="msg"></div>
+  </section>
+
+  <section id="s-historial">
+    <h2>Historial de ventas</h2>
+    <div id="hist-info"></div>
+  </section>
+</main>
+
+<script>
+const inventarioProductos = [
+  { id: 1, nombre: "Agua San Mateo 600ml", precio: 2.50, stock: 50 },
+  { id: 2, nombre: "Galletas Casino", precio: 1.20, stock: 30 },
+  { id: 3, nombre: "Caja de Leche Gloria", precio: 4.50, stock: 20 }
+];
+
+class ColaCajaBodeguita {
+  constructor() { this.clientes = []; }
+  llegarFila(pedido) { this.clientes.push(pedido); }
+  atenderCliente() { return this.clientes.length ? this.clientes.shift() : null; }
+  verSiguiente() { return this.clientes[0] || null; }
+}
+
+class PilaHistorialVentas {
+  constructor() { this.historial = []; }
+  registrarVenta(venta) { this.historial.push(venta); }
+  verUltimaVenta() { return this.historial.length ? this.historial[this.historial.length - 1] : null; }
+}
+
+const productos = inventarioProductos.map(p => ({ ...p }));
+const clientes = [];
+const cola = new ColaCajaBodeguita();
+const pila = new PilaHistorialVentas();
+let sigProd = 4, sigVenta = 1, sigPedido = 1;
+
+const $ = id => document.getElementById(id);
+const money = n => "S/ " + Number(n).toFixed(2);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+function msg(id, texto, ok) { const m = $(id); m.className = "msg " + (ok ? "ok" : "err"); m.textContent = texto; }
+function reservado(idProd, excluir) {
+  return cola.clientes.filter(p => p.idProducto === idProd && p !== excluir).reduce((a, p) => a + p.cantidad, 0);
+}
+
+const secciones = [["s-cliente","Clientes"],["s-producto","Registrar producto"],["s-stock","Stock"],["s-venta","Registrar venta"],["s-cola","Cola"],["s-historial","Historial"]];
+function ir(id) {
+  secciones.forEach(([s]) => $(s).classList.toggle("on", s === id));
+  [...$("nav").children].forEach((b, i) => b.classList.toggle("on", secciones[i][0] === id));
+  if (id === "s-stock") pintarStock();
+  if (id === "s-venta") pintarSelects();
+  if (id === "s-cola") pintarCola();
+  if (id === "s-historial") pintarHistorial();
+}
+secciones.forEach(([id, t]) => { const b = document.createElement("button"); b.textContent = t; b.onclick = () => ir(id); $("nav").appendChild(b); });
+
+function registrarCliente() {
+  const nombre = $("c-nom").value.trim(), apellido = $("c-ape").value.trim();
+  const dni = $("c-dni").value.trim(), telefono = $("c-tel").value.trim();
+  if (!nombre || !apellido || !dni || !telefono) return msg("m-cliente", "Completa todos los campos.", false);
+  if (!/^\d{8}$/.test(dni)) return msg("m-cliente", "El DNI debe tener 8 dígitos.", false);
+  if (!/^\d{9}$/.test(telefono)) return msg("m-cliente", "El teléfono debe tener 9 dígitos.", false);
+  if (clientes.some(c => c.dni === dni)) return msg("m-cliente", "Ya existe un cliente con ese DNI.", false);
+  clientes.push({ nombre, apellido, dni, telefono });
+  ["c-nom","c-ape","c-dni","c-tel"].forEach(i => $(i).value = "");
+  msg("m-cliente", "Cliente registrado.", true);
+}
+
+function buscarCliente() {
+  const dni = $("b-dni").value.trim();
+  const c = clientes.find(x => x.dni === dni);
+  $("r-busqueda").innerHTML = c
+    ? `<div class="card"><strong>${esc(c.nombre)} ${esc(c.apellido)}</strong><br>DNI: ${esc(c.dni)}<br>Teléfono: ${esc(c.telefono)}</div>`
+    : `<div class="card">Cliente no encontrado</div>`;
+}
+
+function registrarProducto() {
+  const nombre = $("p-nom").value.trim(), pre = $("p-pre").value.trim(), stk = $("p-stk").value.trim();
+  if (!nombre || pre === "" || stk === "") return msg("m-producto", "Completa todos los campos.", false);
+  const precio = Number(pre), stock = Number(stk);
+  if (!(precio > 0) || !Number.isInteger(stock) || stock < 0) return msg("m-producto", "Valores inválidos.", false);
+  productos.push({ id: sigProd++, nombre, precio, stock });
+  ["p-nom","p-pre","p-stk"].forEach(i => $(i).value = "");
+  msg("m-producto", "Producto registrado.", true);
+}
+
+function pintarStock() {
+  if (!productos.length) { $("tabla-stock").innerHTML = '<p class="vacio">No hay productos.</p>'; return; }
+  $("tabla-stock").innerHTML = `<table><tr><th>Producto</th><th>Precio</th><th>Stock</th><th>Acciones</th></tr>` +
+    productos.map(p => `<tr><td>${esc(p.nombre)}</td>
+      <td><input id="e-pre-${p.id}" type="number" step="0.01" min="0" value="${p.precio}"></td>
+      <td><input id="e-stk-${p.id}" type="number" step="1" min="0" value="${p.stock}"></td>
+      <td><div class="row"><button class="btn sec" onclick="editarProducto(${p.id})">Guardar</button>
+      <button class="btn sec" onclick="eliminarProducto(${p.id})">Borrar</button></div></td></tr>`).join("") + `</table>`;
+}
+
+function editarProducto(id) {
+  const p = productos.find(x => x.id === id);
+  const pre = $("e-pre-" + id).value.trim(), stk = $("e-stk-" + id).value.trim();
+  const precio = Number(pre), stock = Number(stk);
+  if (!(precio > 0) || !Number.isInteger(stock) || stock < 0) return msg("m-stock", "Valores inválidos.", false);
+  p.precio = precio; p.stock = stock;
+  msg("m-stock", `Actualizado: ${p.nombre}`, true);
+  pintarStock();
+}
+
+function eliminarProducto(id) {
+  if (cola.clientes.some(c => c.idProducto === id)) return msg("m-stock", "Hay ventas pendientes con este producto.", false);
+  const p = productos.find(x => x.id === id);
+  if (!confirm(`¿Eliminar ${p.nombre}?`)) return;
+  productos.splice(productos.indexOf(p), 1);
+  msg("m-stock", "Producto eliminado.", true);
+  pintarStock();
+}
+
+function pintarSelects() {
+  $("v-cli").innerHTML = clientes.length ? clientes.map(c => `<option value="${c.dni}">${esc(c.nombre)} ${esc(c.apellido)} (${c.dni})</option>`).join("") : '<option value="">— Sin clientes —</option>';
+  $("v-pro").innerHTML = productos.length ? productos.map(p => `<option value="${p.id}">${esc(p.nombre)} · S/ ${p.precio} · Stock ${p.stock}</option>`).join("") : '<option value="">— Sin productos —</option>';
+  calcTotal();
+}
+
+function calcTotal() {
+  const p = productos.find(x => x.id === Number($("v-pro").value));
+  const c = Number($("v-can").value);
+  $("v-total").textContent = money(p && c > 0 ? p.precio * c : 0);
+}
+
+function registrarVenta() {
+  const dni = $("v-cli").value, p = productos.find(x => x.id === Number($("v-pro").value));
+  const cliente = clientes.find(c => c.dni === dni);
+  const cantidad = Number($("v-can").value);
+  if (!cliente || !p) return msg("m-venta", "Selecciona cliente y producto válidos.", false);
+  const disponible = p.stock - reservado(p.id);
+  if (cantidad > disponible) return msg("m-venta", `Supera el stock disponible (${disponible}).`, false);
+  cola.llegarFila({ idPedido: sigPedido++, cliente, idProducto: p.id, producto: p.nombre, precioUnit: p.precio, cantidad, total: p.precio * cantidad });
+  msg("m-venta", "Venta enviada a la cola.", true);
+  $("v-can").value = 1; pintarSelects();
+}
+
+function pintarCola() {
+  const q = cola.clientes;
+  if (!q.length) { $("cola-info").innerHTML = '<p class="vacio">No hay clientes en espera.</p>'; return; }
+  const s = cola.verSiguiente();
+  $("cola-info").innerHTML = `<div class="card"><strong>Siguiente:</strong> ${esc(s.cliente.nombre)} (${s.cantidad}x ${esc(s.producto)}) = <strong>${money(s.total)}</strong>
+    <div class="row" style="margin-top:8px"><button class="btn ok" onclick="atender(true)">Confirmar</button>
+    <button class="btn no" onclick="atender(false)">Rechazar</button></div></div>
+    <table><tr><th>#</th><th>Cliente</th><th>Producto</th><th>Cant</th><th>Total</th></tr>` +
+    q.map((p, i) => `<tr><td>${i + 1}</td><td>${esc(p.cliente.nombre)}</td><td>${esc(p.producto)}</td><td>${p.cantidad}</td><td>${money(p.total)}</td></tr>`).join("") + `</table>`;
+}
+
+function atender(confirmar) {
+  const pedido = cola.atenderCliente();
+  if (!pedido) return;
+  const prod = productos.find(x => x.id === pedido.idProducto);
+  let estado = "Rechazada";
+  if (confirmar) {
+    if (!prod || pedido.cantidad > prod.stock) {
+      msg("m-cola", "Stock insuficiente. Compra rechazada.", false);
+    } else {
+      prod.stock -= pedido.cantidad; estado = "Confirmada";
+      msg("m-cola", "Compra confirmada y stock actualizado.", true);
+    }
+  } else {
+    msg("m-cola", "Compra rechazada.", true);
+  }
+  pila.registrarVenta({ id: sigVenta++, fecha: new Date().toLocaleTimeString(), cliente: pedido.cliente, producto: pedido.producto, cantidad: pedido.cantidad, total: pedido.total, estado });
+  pintarCola();
+}
+
+function pintarHistorial() {
+  const h = pila.historial;
+  if (!h.length) { $("hist-info").innerHTML = '<p class="vacio">Sin ventas registradas.</p>'; return; }
+  const u = pila.verUltimaVenta();
+  $("hist-info").innerHTML = `<div class="card">Última venta: <strong>#${u.id}</strong> - ${esc(u.cliente.nombre)} (${money(u.total)})</div>
+    <table><tr><th>#</th><th>Hora</th><th>Cliente</th><th>Producto</th><th>Cant</th><th>Total</th><th>Estado</th></tr>` +
+    [...h].reverse().map(v => `<tr><td>${v.id}</td><td>${v.fecha}</td><td>${esc(v.cliente.nombre)}</td><td>${esc(v.producto)}</td><td>${v.cantidad}</td><td>${money(v.total)}</td><td><span class="tag ${v.estado === "Confirmada" ? "ok" : "no"}">${v.estado}</span></td></tr>`).join("") + `</table>`;
+}
+
+ir("s-cliente");
+</script>
+</body>
+</html>
